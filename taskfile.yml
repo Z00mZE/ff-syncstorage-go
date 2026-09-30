@@ -1,0 +1,11 @@
+version: '3'
+tasks:
+  migrate-up:
+    env:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://postgres_user:postgres_password@localhost:5432/postgres_db
+      GOOSE_MIGRATION_DIR: ./migration
+    cmds:
+      - goose up
+    generates:
+      - output.txt
