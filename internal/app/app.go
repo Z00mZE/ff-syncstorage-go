@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -51,27 +50,12 @@ type TokenService interface {
 func NewFirefoxSyncStorageApp() {
 	e := echo.New()
 
-	e.Use(middleware.RequestLogger())
-	e.Use(middleware.Recover())
+	e.Use(
+		middleware.Recover(),
+		middleware.RequestLogger(),
+	)
 
-	syncstorageRoutGroup := e.Group("/1.5/:uid")
 	routing.BindInfoService(e, nil)
-	{
-		syncstorageRoutGroup.
-			Group("/info").
-			GET(
-				`/collection_counts`,
-				func(c *echo.Context) error {
-					c.Logger().Info(
-						"sync collection counts",
-						slog.String("uid", c.Param("uid")),
-					)
-
-					return nil
-				},
-			)
-
-	}
 
 	e.GET("/", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"message": "Hello, World!"})

@@ -2,104 +2,91 @@ package routing
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v5"
 
 	"github.com/Z00mZE/ff-syncstorage-go/pkg/types"
 )
 
-type SyncStorageService interface {
-	// GetCollectionCounts возвращает список коллекций с указанием кол-ва документов BSO
-	GetCollectionCounts(ctx context.Context, uid string) (map[string]uint, error)
-	// GetCollectionUsage возвращает список коллекций с указанием суммарного объёма данных документов BSO (kb)
-	GetCollectionUsage(ctx context.Context, uid string) (map[string]float64, error)
-	// GetCollectionsTimestamps возвращает список коллекция с указанием даты последнего изменения
-	GetCollectionsTimestamps(ctx context.Context, uid string) (map[string]time.Time, error)
-
-	GetServerConfiguration(ctx context.Context, uid string) (map[string]int, error)
-
-	GetQuotaInformation(ctx context.Context, uid string) (map[string]int, error)
-
-	DeleteAllUserData(ctx context.Context, uid string) error
-	GetCollectionBasicStorageObjectsList(
-		ctx context.Context,
-		uid string,
-		collection string,
-		bsoIds []string,
-		newer time.Time,
-		older time.Time,
-		full bool,
-		limit uint,
-		offset string,
-		sortOrder types.BasicStorageObjectSortOrder,
-	) (map[string]int, error)
-
-	UpsertStorageCollection(ctx context.Context, uid, collection string, data types.BasicStorageObject) error
-	DeleteStorageCollection(ctx context.Context, uid, collection string, bsoIDs []string) error
-
-	GetBasicStorageObjectID(ctx context.Context, uid, collection, bsoID string) (types.BasicStorageObject, error)
-	UpsertBasicStorageObjectID(ctx context.Context, uid, collection string, data types.BasicStorageObject) error
-	DeleteBasicStorageObjectID(ctx context.Context, uid, collection, bsoID string) error
+type InfoService interface {
+	// GetCollectionTimestamps get last-modified timestamp for every collection
+	GetCollectionTimestamps(ctx context.Context, uid string) (map[string]uint64, error)
+	// GetCollectionCounts get number of BSOs in each collection
+	GetCollectionCounts(ctx context.Context, uid string) (map[string]uint64, error)
+	// GetCollectionUsage Get data volume used by each collection in KB
+	GetCollectionUsage(ctx context.Context, uid string) (map[string]uint64, error)
+	// GetQuota Get current storage usage and quota in KB.
+	// Two-element array [usageKB, quotaKB]; quota is null when unenforced
+	GetQuota(ctx context.Context, uid string) (uint64, error)
+	// GetConfiguration Get protocol and payload limits enforced by this server
+	GetConfiguration(ctx context.Context, uid string) (types.Configuration, error)
 }
 
-type syncStorageInfoRouter struct {
-	service SyncStorageService
+type ssiRouter struct {
+	service InfoService
 }
 
-func BindInfoService(route *echo.Echo, infoSrv SyncStorageService) {
-	container := &syncStorageInfoRouter{
-		service: infoSrv,
-	}
-	routeGroup := route.Group("/1.5/:uid/info")
-	routeGroup.GET(`/collection_counts`, container.collectionCount)
-	routeGroup.GET(`/collection_usage`, container.collectionUsage)
-	routeGroup.GET(`/collections`, container.getCollectionsTimestamps)
-	routeGroup.GET(`/configuration`, container.getServerConfiguration)
+func BindInfoService(route *echo.Echo, infoSrv InfoService) {
+	self := &ssiRouter{service: infoSrv}
 
+	route.GET(`/1.5/:uid/info/collections`, self.getCollectionTimestamps)
+	route.GET(`/1.5/:uid/info/collection_counts`, self.getCollectionCounts)
+	route.GET(`/1.5/:uid/info/collection_usage`, self.getCollectionUsage)
+	route.GET(`/1.5/:uid/info/quota`, self.getQuota)
+	route.GET(`/1.5/:uid/info/configuration`, self.getConfiguration)
 }
 
-func (r *syncStorageInfoRouter) collectionCount(c *echo.Context) error {
+func (r *ssiRouter) notImplemented(c *echo.Context) error {
+	panic("Not Implemented")
+}
+
+func (r *ssiRouter) getCollectionTimestamps(c *echo.Context) error {
 	uid := c.Param("uid")
-	ctx := c.Request().Context()
-
-	data, dataError := r.service.GetCollectionCounts(ctx, uid)
+	data, dataError := r.service.GetCollectionTimestamps(c.Request().Context(), uid)
 	if dataError != nil {
-		c.Logger().ErrorContext(ctx, dataError.Error(), slog.String("uid", uid))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Occurred some error getting collection counts")
-	}
-	return c.JSON(http.StatusOK, data)
-}
-
-func (r *syncStorageInfoRouter) collectionUsage(c *echo.Context) error {
-	uid := c.Param("uid")
-	ctx := c.Request().Context()
-	data, dataError := r.service.GetCollectionUsage(ctx, uid)
-	if dataError != nil {
-		c.Logger().ErrorContext(ctx, dataError.Error(), slog.String("uid", uid))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Occurred some error getting collection usage")
-	}
-	return c.JSON(http.StatusOK, data)
-}
-
-func (r *syncStorageInfoRouter) getCollectionsTimestamps(c *echo.Context) error {
-	uid := c.Param("uid")
-	ctx := c.Request().Context()
-	data, dataError := r.service.GetCollectionsTimestamps(ctx, uid)
-	if dataError != nil {
-		c.Logger().ErrorContext(ctx, dataError.Error(), slog.String("uid", uid))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Occurred some error getting collection usage")
-	}
-	out := make(map[string]int64, len(data))
-	for k, v := range data {
-		out[k] = v.UTC().Unix()
+		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
 	}
 
 	return c.JSON(http.StatusOK, data)
 }
 
-func (r *syncStorageInfoRouter) getServerConfiguration(c *echo.Context) error {
-	return nil
+func (r *ssiRouter) getCollectionCounts(c *echo.Context) error {
+	uid := c.Param("uid")
+	data, dataError := r.service.GetCollectionCounts(c.Request().Context(), uid)
+	if dataError != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
+func (r *ssiRouter) getCollectionUsage(c *echo.Context) error {
+	uid := c.Param("uid")
+	data, dataError := r.service.GetCollectionUsage(c.Request().Context(), uid)
+	if dataError != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
+func (r *ssiRouter) getQuota(c *echo.Context) error {
+	uid := c.Param("uid")
+	data, dataError := r.service.GetQuota(c.Request().Context(), uid)
+	if dataError != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
+	}
+
+	return c.JSON(http.StatusOK, []any{data, nil})
+}
+
+func (r *ssiRouter) getConfiguration(c *echo.Context) error {
+	uid := c.Param("uid")
+	data, dataError := r.service.GetConfiguration(c.Request().Context(), uid)
+	if dataError != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
+	}
+
+	return c.JSON(http.StatusOK, []any{data, nil})
 }
