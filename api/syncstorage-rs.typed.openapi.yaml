@@ -1,0 +1,1047 @@
+openapi: 3.1.0
+info:
+  title: syncstorage-rs API — typed compatibility contract
+  version: 1.5+1.0
+  description: 'Typed OpenAPI contract for the current mozilla-services/syncstorage-rs API.
+
+
+    The endpoint surface and behavior are based on the current syncstorage-rs
+
+    utoipa annotations/handlers. Missing request/response schemas in Mozilla''s
+
+    generated Swagger have been restored from the Rust request extractors,
+
+    database result types, server settings, and handler serialization code.
+
+
+    This file is intended for compatibility work and code generation. It does not
+
+    change the SyncStorage wire protocol.
+
+    '
+servers:
+  - url: https://sync.example.com
+tags:
+  - name: tokenserver
+  - name: info
+  - name: orm
+  - name: bso
+paths:
+  /1.5/{uid}/info/collections:
+    get:
+      tags:
+        - info
+      operationId: getCollectionTimestamps
+      summary: Get last-modified timestamp for every collection
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/XIfModifiedSince'
+      responses:
+        '200':
+          description: Map of collection name to last-modified timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionTimestamps'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/SyncError'
+  /1.5/{uid}/info/collection_counts:
+    get:
+      tags:
+        - info
+      operationId: getCollectionCounts
+      summary: Get number of BSOs in each collection
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/XIfModifiedSince'
+      responses:
+        '200':
+          description: Map of collection name to BSO count
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionCounts'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/SyncError'
+  /1.5/{uid}/info/collection_usage:
+    get:
+      tags:
+        - info
+      operationId: getCollectionUsage
+      summary: Get data volume used by each collection in KB
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/XIfModifiedSince'
+      responses:
+        '200':
+          description: Map of collection name to approximate usage in KB
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionUsage'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/SyncError'
+  /1.5/{uid}/info/quota:
+    get:
+      tags:
+        - info
+      operationId: getQuota
+      summary: Get current orm usage and quota in KB
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+      responses:
+        '200':
+          description: Two-element array [usageKB, quotaKB]; quota is null when unenforced
+          headers:
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaResponse'
+        '401':
+          $ref: '#/components/responses/SyncError'
+  /1.5/{uid}/info/configuration:
+    get:
+      tags:
+        - info
+      operationId: getConfiguration
+      summary: Get protocol and payload limits enforced by this server
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+      responses:
+        '200':
+          description: Server limits. Fields may be omitted when not enforced/reported.
+          headers:
+            X-Last-Modified:
+              description: Current implementation always returns 0.00 for this static resource.
+              schema:
+                type: string
+                examples:
+                  - '0.00'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationResponse'
+        '401':
+          $ref: '#/components/responses/SyncError'
+  /1.5/{uid}:
+    delete:
+      tags:
+        - orm
+      operationId: deleteAllStorage
+      summary: Delete all SyncStorage data for the user
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: Deletion timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+  /1.5/{uid}/storage:
+    delete:
+      deprecated: true
+      tags:
+        - orm
+      operationId: deleteAllStorageLegacy
+      summary: Legacy alias for deleting all SyncStorage data for the user
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: Deletion timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+  /1.5/{uid}/storage/{collection}:
+    get:
+      tags:
+        - orm
+      operationId: getCollection
+      summary: Retrieve BSOs or BSO ids from a collection
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/Ids'
+        - $ref: '#/components/parameters/Newer'
+        - $ref: '#/components/parameters/Older'
+        - $ref: '#/components/parameters/Full'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/XIfModifiedSince'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: Collection records. Without full=true, elements are BSO ids.
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+            X-Weave-Records:
+              $ref: '#/components/headers/XWeaveRecords'
+            X-Weave-Next-Offset:
+              $ref: '#/components/headers/XWeaveNextOffset'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BSOList'
+                  - $ref: '#/components/schemas/BSOIdList'
+            application/newlines:
+              schema:
+                type: string
+                description: One JSON BSO or JSON string id per line, depending on `full`.
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '400':
+          $ref: '#/components/responses/SyncError'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    post:
+      tags:
+        - orm
+      operationId: postCollection
+      summary: Create/update multiple BSOs, optionally using a batch
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/Batch'
+        - $ref: '#/components/parameters/Commit'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionPostRequest'
+          application/newlines:
+            schema:
+              type: string
+              description: Newline-delimited JSON BSO objects.
+      responses:
+        '200':
+          description: Per-record result and optional batch identifier
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+            X-Weave-Quota-Remaining:
+              $ref: '#/components/headers/XWeaveQuotaRemaining'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCollectionResponse'
+        '400':
+          $ref: '#/components/responses/SyncError'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '202':
+          description: Batch created/appended but not committed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCollectionResponse'
+    delete:
+      tags:
+        - orm
+      operationId: deleteCollection
+      summary: Delete an entire collection or selected ids
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/Ids'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: Collection modification timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+  /1.5/{uid}/storage/{collection}/{id}:
+    get:
+      tags:
+        - bso
+      operationId: getBSO
+      summary: Retrieve a single BSO
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/BSOId'
+        - $ref: '#/components/parameters/XIfModifiedSince'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: BSO
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BSO'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    put:
+      tags:
+        - bso
+      operationId: putBSO
+      summary: Create or replace a BSO
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/BSOId'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BSOPutRequest'
+      responses:
+        '200':
+          description: New modification timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+            X-Weave-Quota-Remaining:
+              $ref: '#/components/headers/XWeaveQuotaRemaining'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+        '400':
+          $ref: '#/components/responses/SyncError'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+    delete:
+      tags:
+        - bso
+      operationId: deleteBSO
+      summary: Delete a single BSO
+      security:
+        - hawkAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/BSOId'
+        - $ref: '#/components/parameters/XIfUnmodifiedSince'
+      responses:
+        '200':
+          description: Collection modification timestamp
+          headers:
+            X-Last-Modified:
+              $ref: '#/components/headers/XLastModified'
+            X-Weave-Timestamp:
+              $ref: '#/components/headers/XWeaveTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+        '401':
+          $ref: '#/components/responses/SyncError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+  /1.0/{application}/{version}:
+    get:
+      tags:
+        - tokenserver
+      operationId: get_tokenserver_result
+      summary: Get sync token
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: application
+          in: path
+          required: true
+          description: Application name; Firefox Sync uses `sync`.
+          schema:
+            type: string
+          example:
+            - sync
+        - name: version
+          in: path
+          required: true
+          description: Storage API version; Firefox Sync uses `1.5`.
+          schema:
+            type: string
+          example:
+            - '1.5'
+        - $ref: '#/components/parameters/XClientState'
+      responses:
+        '200':
+          description: Temporary SyncStorage credentials and assigned endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenserverResponse'
+          headers:
+            X-Timestamp:
+              description: Server Unix timestamp in seconds.
+              schema:
+                type: integer
+                format: int64
+            X-Content-Type-Options:
+              description: Content-sniffing protection; current server returns `nosniff`.
+              schema:
+                type: string
+                enum:
+                  - nosniff
+        '400':
+          $ref: '#/components/responses/TokenserverError'
+        '401':
+          $ref: '#/components/responses/TokenserverError'
+        '403':
+          $ref: '#/components/responses/TokenserverError'
+        '503':
+          description: Tokenserver temporarily unavailable
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenserverError'
+        '404':
+          description: Unknown URL or unsupported application
+        '405':
+          description: Unsupported HTTP method
+        '406':
+          description: Requested Accept media type is not supported
+      description: Allocates a Sync Storage node and returns short-lived HAWK credentials. Current Firefox uses
+        application=sync and version=1.5.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: OAuth2 access token
+      description: Mozilla Accounts OAuth bearer credential accepted by Tokenserver.
+    hawkAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: HAWK Authorization header using credentials returned by Tokenserver.
+  parameters:
+    Uid:
+      name: uid
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    Collection:
+      name: collection
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 32
+    BSOId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+    XClientState:
+      name: X-Client-State
+      in: header
+      required: false
+      description: Client-side encryption-key state; max 32 URL-safe base64/dot characters.
+      schema:
+        type: string
+        maxLength: 32
+        pattern: ^[A-Za-z0-9_.-]+$
+    Ids:
+      name: ids
+      in: query
+      required: false
+      description: Comma-separated BSO ids.
+      schema:
+        type: string
+    Newer:
+      name: newer
+      in: query
+      required: false
+      description: Return records modified strictly after this timestamp.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    Older:
+      name: older
+      in: query
+      required: false
+      description: Return records modified strictly before this timestamp.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    Full:
+      name: full
+      in: query
+      required: false
+      description: Return complete BSO objects instead of ids.
+      schema:
+        type: boolean
+        default: false
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - newest
+          - oldest
+          - index
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Opaque continuation value previously returned in X-Weave-Next-Offset.
+      schema:
+        type: string
+    Batch:
+      name: batch
+      in: query
+      required: false
+      description: Start a batch with true, or append to an existing batch using its opaque id.
+      schema:
+        oneOf:
+          - type: boolean
+          - type: string
+    Commit:
+      name: commit
+      in: query
+      required: false
+      description: Commit the batch identified by batch.
+      schema:
+        type: boolean
+        default: false
+    XIfModifiedSince:
+      name: X-If-Modified-Since
+      in: header
+      required: false
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    XIfUnmodifiedSince:
+      name: X-If-Unmodified-Since
+      in: header
+      required: false
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+  headers:
+    XLastModified:
+      description: Last-modified timestamp for the addressed resource.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    XWeaveTimestamp:
+      description: Current server timestamp.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    XWeaveRecords:
+      description: Total number of matching records when efficiently available.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    XWeaveNextOffset:
+      description: Opaque continuation token for the next page.
+      schema:
+        type: string
+    XWeaveQuotaRemaining:
+      description: Approximate remaining quota in KB, when quota is enforced/reported.
+      schema:
+        type: number
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        minimum: 0
+  schemas:
+    Timestamp:
+      type: number
+      format: double
+      minimum: 0
+      examples:
+        - 1759400000.42
+    TokenserverResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - uid
+        - api_endpoint
+        - duration
+        - hashed_fxa_uid
+        - hashalg
+        - node_type
+      properties:
+        id:
+          type: string
+          description: Opaque signed token used as the HAWK credential id.
+        key:
+          type: string
+          description: Derived secret used to sign HAWK requests.
+        uid:
+          type: integer
+          format: int64
+          description: SyncStorage user id allocated by Tokenserver.
+        api_endpoint:
+          type: string
+          format: uri
+          description: Assigned SyncStorage endpoint including /1.5/{uid}.
+          examples:
+            - https://sync.example.com/1.5/12345
+        duration:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Token lifetime in seconds.
+        hashed_fxa_uid:
+          type: string
+          description: Privacy-preserving hashed Firefox Accounts uid.
+        hashalg:
+          type: string
+          enum:
+            - sha256
+          description: Hash algorithm used for hashed_fxa_uid.
+        node_type:
+          type: string
+          description: Storage backend type reported for telemetry.
+          enum:
+            - mysql
+            - postgres
+            - spanner
+    TokenserverError:
+      type: object
+      description: Tokenserver error mapping. Exact fields depend on the failure class.
+      additionalProperties: true
+      properties:
+        status:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        message:
+          type: string
+    ConfigurationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - max_post_bytes
+        - max_post_records
+        - max_record_payload_bytes
+        - max_request_bytes
+        - max_total_bytes
+        - max_total_records
+        - max_quota_limit
+      properties:
+        max_post_bytes:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum combined size of BSO payloads in one POST, bytes.
+          default: 2621440
+        max_post_records:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum number of BSOs in one POST.
+          default: 100
+        max_record_payload_bytes:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum size of one BSO payload, bytes.
+          default: 2621440
+        max_request_bytes:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum Content-Length/request body size, bytes.
+          default: 2625536
+        max_total_bytes:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum combined BSO payload bytes across a batch.
+          default: 262144000
+        max_total_records:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum BSO count across a batch.
+          default: 10000
+        max_quota_limit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Configured maximum per-user quota in bytes.
+          default: 2097152000
+    CollectionTimestamps:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Timestamp'
+      examples:
+        - bookmarks: 1759400000.42
+          history: 1759400012.01
+    CollectionCounts:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+      examples:
+        - bookmarks: 124
+          history: 5234
+    CollectionUsage:
+      type: object
+      description: Collection usage in KB; values may be approximate.
+      additionalProperties:
+        type: number
+        minimum: 0
+      examples:
+        - bookmarks: 212.5
+          history: 4096.0
+    QuotaResponse:
+      type: array
+      description: '[current usage in KB, quota in KB]; quota is null if unenforced.'
+      prefixItems:
+        - type: number
+          minimum: 0
+        - oneOf:
+            - type: number
+              minimum: 0
+            - type: 'null'
+      minItems: 2
+      maxItems: 2
+      examples:
+        - - 2048.0
+          - null
+    BSO:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - modified
+        - payload
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        modified:
+          $ref: '#/components/schemas/Timestamp'
+        payload:
+          type: string
+          description: Opaque Sync payload. Offloaded payloads are reattached before serialization.
+        sortindex:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: -999999999
+          maximum: 999999999
+    BSOInput:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        sortindex:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: -999999999
+          maximum: 999999999
+        payload:
+          type:
+            - string
+            - 'null'
+        ttl:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: 0
+        modified:
+          description: Accepted for compatibility but ignored by the server.
+        collection:
+          description: Accepted for compatibility but ignored by the server.
+    BSOPutRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+          description: Accepted by the body extractor; path bso_id identifies the resource.
+        sortindex:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: -999999999
+          maximum: 999999999
+        payload:
+          type:
+            - string
+            - 'null'
+        ttl:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: 0
+        modified:
+          description: Accepted but ignored by the server.
+        collection:
+          description: Accepted but ignored by the server.
+    BSOList:
+      type: array
+      items:
+        $ref: '#/components/schemas/BSO'
+    BSOIdList:
+      type: array
+      items:
+        type: string
+        maxLength: 64
+    PostCollectionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - failed
+      properties:
+        modified:
+          $ref: '#/components/schemas/Timestamp'
+          description: Present for a normal POST and a committed batch.
+        success:
+          type: array
+          items:
+            type: string
+          description: BSO ids successfully written/accepted.
+        failed:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of BSO id to validation/database error string.
+        batch:
+          type: string
+          description: Present on an uncommitted batch response (HTTP 202).
+    SyncErrorBody:
+      description: 'SyncStorage error bodies are historically not a single uniform JSON object;
+
+        some protocol errors are numeric/string response codes. Consumers should use
+
+        HTTP status and documented response headers as the primary error contract.
+
+        '
+      oneOf:
+        - type: integer
+        - type: string
+        - type: object
+          additionalProperties: true
+    CollectionPostRequest:
+      type: array
+      items:
+        $ref: '#/components/schemas/BSOInput'
+    ModifiedResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - modified
+      properties:
+        modified:
+          $ref: '#/components/schemas/Timestamp'
+  responses:
+    SyncError:
+      description: SyncStorage protocol error
+      headers:
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SyncErrorBody'
+    TokenserverError:
+      description: Tokenserver request rejected
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenserverError'
+    NotModified:
+      description: Resource has not changed since X-If-Modified-Since.
+      headers:
+        X-Last-Modified:
+          $ref: '#/components/headers/XLastModified'
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+    NotFound:
+      description: Requested BSO was not found.
+      headers:
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+    Conflict:
+      description: Write rejected because of a concurrent/conflicting modification.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+    PreconditionFailed:
+      description: Resource changed after X-If-Unmodified-Since.
+      headers:
+        X-Last-Modified:
+          $ref: '#/components/headers/XLastModified'
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+    RequestTooLarge:
+      description: Request exceeds server-advertised size limits.
+      headers:
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+    UnsupportedMediaType:
+      description: Request Content-Type is not supported.
+      headers:
+        X-Weave-Timestamp:
+          $ref: '#/components/headers/XWeaveTimestamp'
+x-syncstorage-rs-contract:
+  basis:
+    - syncserver/src/web/handlers.rs
+    - syncserver/src/tokenserver/handlers.rs
+    - syncserver/src/web/extractors/*.rs
+    - syncstorage-db-common/src/results.rs
+    - syncstorage-settings/src/lib.rs
+  note: Schemas absent from generated Swagger were restored from actual Rust serialization/deserialization behavior.
