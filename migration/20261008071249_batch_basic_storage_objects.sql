@@ -6,7 +6,7 @@ CREATE TABLE batch_basic_storage_objects
     collection_id INTEGER NOT NULL,
     batch_id      UUID    NOT NULL,
     batch_bso_id  TEXT    NOT NULL,
-    sortindex     INTEGER,
+    sort_index     INTEGER,
     payload       TEXT,
     ttl           BIGINT,
     PRIMARY KEY (user_id, collection_id, batch_id, batch_bso_id),

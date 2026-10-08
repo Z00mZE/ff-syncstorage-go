@@ -9,5 +9,3 @@ tasks:
       GOOSE_MIGRATION_DIR: ./migration
     cmds:
       - goose {{.ACTION}} {{.CLI_ARGS}} sql
-
-

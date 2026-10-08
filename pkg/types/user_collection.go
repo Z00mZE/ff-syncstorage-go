@@ -1,6 +1,11 @@
 package types
 
+import "time"
+
 type UserCollection struct {
-	ID       uint64
-	ParentID uint64
+	UserID       uint64
+	CollectionID uint64
+	Modified     time.Time
+	Count        uint64
+	TotalBytes   uint64
 }

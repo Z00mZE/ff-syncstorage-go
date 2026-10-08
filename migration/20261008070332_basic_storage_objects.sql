@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS basic_storage_objects (
                       user_id BIGINT NOT NULL,
                       collection_id INTEGER NOT NULL,
                       bso_id TEXT NOT NULL,
-                      sortindex INTEGER,
+                      sort_index INTEGER,
                       payload TEXT NOT NULL,
                       modified TIMESTAMPTZ NOT NULL,
                       expiry TIMESTAMPTZ NOT NULL,
