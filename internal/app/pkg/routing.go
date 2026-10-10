@@ -1,4 +1,4 @@
-package routing
+package pkg
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type InfoService interface {
 	GetCollectionUsage(ctx context.Context, uid uint64) (map[string]uint64, error)
 	// GetQuota Get current orm usage and quota in KB.
 	// Two-element array [usageKB, quotaKB]; quota is null when unenforced
-	GetQuota(ctx context.Context, uid uint64) (uint64, error)
+	GetCurrentStorageUsage(ctx context.Context, uid uint64) (uint64, error)
 	// GetConfiguration Get protocol and payload limits enforced by this server
 	GetConfiguration(ctx context.Context, uid uint64) (types.Configuration, error)
 }
@@ -87,7 +87,7 @@ func (r *ssiRouter) getQuota(c *echo.Context) error {
 		return c.JSON(http.StatusBadRequest, uidError.Error())
 	}
 
-	data, dataError := r.service.GetQuota(c.Request().Context(), uid)
+	data, dataError := r.service.GetCurrentStorageUsage(c.Request().Context(), uid)
 	if dataError != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, dataError.Error())
 	}

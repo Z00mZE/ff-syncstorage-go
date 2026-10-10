@@ -6,6 +6,6 @@ import (
 	"github.com/Z00mZE/ff-syncstorage-go/pkg/logger"
 )
 
-func NewLogger(lvl string) *slog.Logger {
-	return logger.NewLogger(lvl)
+func NewLogger() *slog.Logger {
+	return logger.NewLogger(`error`)
 }
