@@ -31,3 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 db.sqlite
+db.sqlite-shm
+db.sqlite-wal

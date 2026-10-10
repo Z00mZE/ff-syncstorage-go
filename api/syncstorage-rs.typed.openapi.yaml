@@ -20,7 +20,7 @@ info:
 
     '
 servers:
-  - url: https://sync.example.com
+  - url: http://localhost
 tags:
   - name: tokenserver
   - name: info

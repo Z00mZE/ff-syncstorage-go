@@ -2,12 +2,13 @@ package info
 
 import (
 	"context"
+	"time"
 
 	"github.com/Z00mZE/ff-syncstorage-go/pkg/types"
 )
 
 type Storage interface {
-	GetCollectionTimestamps(ctx context.Context, uid uint64) (map[string]uint64, error)
+	GetCollectionTimestamps(ctx context.Context, uid uint64) (map[string]time.Time, error)
 	GetCollectionCounts(ctx context.Context, uid uint64) (map[string]uint64, error)
 	GetCollectionsUsageByUID(ctx context.Context, uid uint64) (map[string]uint64, error)
 }
@@ -21,7 +22,15 @@ func NewService(storage Storage) *Service {
 
 // GetCollectionTimestamps Get last-modified timestamp for every collection
 func (s *Service) GetCollectionTimestamps(ctx context.Context, uid uint64) (map[string]uint64, error) {
-	return s.storage.GetCollectionTimestamps(ctx, uid)
+	data, dataError := s.storage.GetCollectionTimestamps(ctx, uid)
+	if dataError != nil {
+		return nil, dataError
+	}
+	out := make(map[string]uint64, len(data))
+	for k, v := range data {
+		out[k] = uint64(v.Unix())
+	}
+	return out, nil
 }
 
 // GetCollectionCounts Get number of BSOs in each collection
