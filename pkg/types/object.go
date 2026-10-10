@@ -2,10 +2,10 @@ package types
 
 import "time"
 
-// BasicStorageObject (BSO) is the generic JSON wrapper around all items passed into and out of the SyncStorage server.
+// StorageObject (BSO) is the generic JSON wrapper around all items passed into and out of the SyncStorage server.
 // Like all JSON documents, BSOs are composed of unicode character data rather than raw bytes and must be encoded for
 // transmission over the network. The SyncStorage service always encodes BSOs in UTF8.
-type BasicStorageObject struct {
+type StorageObject struct {
 	//	An identifying string. For a user, the id must be unique for a BSO within a collection, though objects in
 	//	different collections may have the same ID.
 	//

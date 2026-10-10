@@ -2,11 +2,17 @@ package sqlite
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
 	"time"
 
+	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/database"
 	_ "modernc.org/sqlite"
 )
+
+//go:embed migration/*.sql
+var embedMigrations embed.FS
 
 func NewConnection(path string) (*sql.DB, error) {
 	// Параметры строки подключения (DSN) оптимизированные под SSD:
@@ -32,5 +38,19 @@ func NewConnection(path string) (*sql.DB, error) {
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("база данных недоступна: %w", err)
 	}
+
+	if migrationError := migration(db); migrationError != nil {
+		return nil, migrationError
+	}
 	return db, nil
+}
+
+func migration(conn *sql.DB) error {
+	goose.SetBaseFS(embedMigrations)
+
+	if err := goose.SetDialect(string(database.DialectSQLite3)); err != nil {
+		panic(err)
+	}
+
+	return goose.Up(conn, "migration")
 }

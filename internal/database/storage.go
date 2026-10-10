@@ -26,3 +26,7 @@ func (s *Storage) GetCollectionCounts(ctx context.Context, uid uint64) (map[stri
 	//TODO implement me
 	panic("implement me")
 }
+func (s *Storage) GetCollectionsUsageByUID(ctx context.Context, uid uint64) (map[string]uint64, error) {
+	//TODO implement me
+	panic("implement me")
+}
