@@ -4,8 +4,8 @@ tasks:
     vars:
       ACTION: '{{index .MATCH 0}}'
     env:
-      GOOSE_DRIVER: postgres
-      GOOSE_DBSTRING: postgres://postgres_user:postgres_password@localhost:5432/postgres_db
+      GOOSE_DRIVER: sqlite3
+      GOOSE_DBSTRING: ./database.db
       GOOSE_MIGRATION_DIR: ./migration
     cmds:
       - goose {{.ACTION}} {{.CLI_ARGS}} sql
